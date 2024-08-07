@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+      - "80:8088"
+    volumes:
+      - "./nginx/conf.d:/etc/nginx/conf.d"
+    depends_on:
+      - php_fpm
+      - api
+    networks:
+      dev:
+
+  api:
+    build:
+      context: ./api/docker/nginx
+      dockerfile: Dockerfile
+    volumes:
+      - ./api:/app
+    depends_on:
+      - php_fpm
+    networks:
+      - dev
+
+  php_fpm:
+    build:
+      context: api/docker
+      dockerfile: Dockerfile
+    volumes:
+      - ./api:/app
+    ports:
+      - '9000:9000'
+    networks:
+      - dev
+
+  composer:
+    container_name: composer
+    build:
+      context: settings_api/composer_
+      dockerfile: Dockerfile
+    volumes:
+      - ./api:/var/www/laravel
+    networks:
+      dev:
+
+  artisan:
+    build:
+      context: settings_api/artisan_
+      dockerfile: Dockerfile
+    volumes:
+      - ./api:/var/www/laravel
+    entrypoint: ["php", "/var/www/laravel/artisan"]
+    networks:
+      dev:
+
+
+  client:
+    build:
+      context: ./client/docker/nginx
+      dockerfile: Dockerfile
+    volumes:
+      - ./client:/app
+    networks:
+      dev:
+    depends_on:
+      - client-node
+
+
+  client-node:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    volumes:
+      - ./client:/app
+    networks:
+      dev:
+
+  client-node-cli:
+    build:
+      context: ./settings_client/client_npm
+      dockerfile: Dockerfile
+    volumes:
+      - ./client:/app
+    networks:
+      dev:
+
+networks:
+  dev:
+
